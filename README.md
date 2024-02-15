@@ -97,7 +97,7 @@ print(result)
 ```
 #### Gemini Pro Example with the Python API
 
-The API Key for Gemini Pro is read from the `GEMINI_PRO_API_KEY` environment variable or .env file. It can optionally be passed in to through the `reasoningModuleLLMConfig.api_key` field.
+The API Key for Gemini Pro is read from the `GEMINI_PRO_API_KEY` environment variable or .env file. It can optionally be passed in to through the `autologic.reasoningEngine.LLMConfig.api_key` field.
 
 ```python
 from autologic import reasoningEngine
@@ -306,7 +306,7 @@ Once you are done, send the **CTRL + D** signal to exit interactive mode and qui
 This interactive workflow allows you to conveniently test long, complex reasoning without having to put all the prompt in quotes or escape newlines.
 
 ## TODO
-- Expose information Reasoning Structure and Reasoning Module selection via Python API. Currently, it is only visible when using verbose=True in CLI and API. 
+- Expose information on Reasoning Structure and Reasoning Module selection via Python API. Currently, it is only visible when using verbose=True in CLI and API. 
 - Add Mixed mode where discovery of Reasoning Structure and usage of Reasoning Structure can be done by different LLMs.
 - Add support for openai models
 - Add package to Pypi
