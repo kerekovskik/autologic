@@ -1,0 +1,8 @@
+__pycache__
+*_venv
+*.pyc
+notebook-playground-area
+.env
+*egg-info
+venv
+.DS_Store

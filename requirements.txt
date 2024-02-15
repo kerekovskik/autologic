@@ -1,0 +1,4 @@
+google-generativeai
+jupyter
+python-dotenv
+llama-cpp-python
