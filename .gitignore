@@ -7,3 +7,4 @@ notebook-playground-area
 venv
 .DS_Store
 dist/
+main.log
