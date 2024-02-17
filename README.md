@@ -29,6 +29,14 @@ The first stage has 3 steps guided by meta-prompting:
 
 ## Getting Started
 
+### Install from Pypi
+
+```bash
+python3 -m venv venv
+source  venv/bin/activate
+CMAKE_ARGS="-DLLAMA_METAL=on" python3 -m pip install autologic
+```
+
 ### Installation as editable package
 
 The following instructions show the CMAKE arguments for compiling llama-cpp-python dependencies with support for metal.
@@ -39,7 +47,7 @@ git clone https://github.com/waszumteufel/autologic.git
 cd autologic
 python3 -m venv venv
 source  venv/bin/activate
-CMAKE_ARGS="-DLLAMA_METAL=on" pip3 install -e .
+CMAKE_ARGS="-DLLAMA_METAL=on" python3 -m pip install -e .
 ```
 
 ### Directly install from Github
@@ -47,9 +55,47 @@ CMAKE_ARGS="-DLLAMA_METAL=on" pip3 install -e .
 ```bash
 python3 -m venv venv
 source  venv/bin/activate
-CMAKE_ARGS="-DLLAMA_METAL=on" pip3 install git+https://github.com/waszumteufel/autologic@main#egg=autologic
+CMAKE_ARGS="-DLLAMA_METAL=on" python3 -m pip install git+https://github.com/waszumteufel/autologic@main#egg=autologic
 ```
 
+#### Note on CMAKE_ARGS
+
+The CMAKE_ARGS environment variable is used to direct llama-cpp-python to be compiled with specific support for GPU drivers for hardware acceleration.
+Below is a non-exhaustive list of common values. 
+
+**Metal (MPS)**
+
+For Macs with the M-series processor.
+
+```
+CMAKE_ARGS="-DLLAMA_METAL=on" 
+```
+
+**Vulkan**
+
+```
+CMAKE_ARGS="-DLLAMA_VULKAN=on" 
+```
+
+**OpenBLAS**
+
+```
+CMAKE_ARGS="-DLLAMA_BLAS=ON -DLLAMA_BLAS_VENDOR=OpenBLAS"
+```
+
+**cuBLAS**
+
+```
+CMAKE_ARGS="-DLLAMA_CUBLAS=on
+```
+
+**hipBLAS**
+
+For AMD Cards
+
+```
+CMAKE_ARGS="-DLLAMA_HIPBLAS=on"
+```
 
 ## Configuration
 
@@ -309,6 +355,5 @@ This interactive workflow allows you to conveniently test long, complex reasonin
 - Expose information on Reasoning Structure and Reasoning Module selection via Python API. Currently, it is only visible when using verbose=True in CLI and API. 
 - Add Mixed mode where discovery of Reasoning Structure and usage of Reasoning Structure can be done by different LLMs.
 - Add support for openai models
-- Add package to Pypi
 - Add support for other prompt formats (Llama2, airoboros, etc.)
 - Add REST support via Flask
