@@ -1,0 +1,36 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "autologic"
+version = "0.0.1"
+description = "A framework for LLMs to self-compose reasoning structures"
+authors = [{name = "Konstantin Kerekovski", email = "kerekovskik@gmail.com"}]
+license = {text = "Apache-2.0"}
+readme = "README.md"
+requires-python = ">=3.8"  
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.8",  
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11"
+]
+keywords = ["LLMs", "framework", "reasoning structures"]
+dependencies = [
+    "python-dotenv",
+    "google-generativeai",
+    "llama-cpp-python",
+]
+
+[project.urls]
+Repository = "https://github.com/waszumteufel/autologic"
+
+[project.scripts]
+autologic = "autologic.cli:main"
+
+[tool.setuptools]
+packages = {find = {where = ["src"]}}
