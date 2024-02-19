@@ -218,6 +218,35 @@ Thinking...
 ANSWER: The weight of a pound of feathers is equal to the weight of a pound of lead.
 ```
 
+
+##### OpenAI example with CLI
+
+Example with a prompt 
+
+```bash
+autologic openai --temp 0.2 \
+--retries 3 \
+--prompt "What weighs more? A pound of feathers or a pound of lead?"
+```
+
+Example output 
+
+
+```
+Thinking...
+2024-02-14 18:50:34.054248 | Starting SELECT Phase
+2024-02-14 18:50:37.008261 | SELECT Phase Complete
+2024-02-14 18:50:37.008367 | Starting ADAPT Phase
+2024-02-14 18:50:40.322604 | ADAPT Phase Complete
+2024-02-14 18:50:40.322641 | Starting IMPLEMENT Phase
+2024-02-14 18:50:45.567405 | IMPLEMENT Phase Complete
+2024-02-14 18:50:45.567738 | Starting to Solve Problem using Reasoning Structure
+2024-02-14 18:50:52.775653 | Solution has been found.
+
+
+ANSWER: The weight of a pound of feathers is equal to the weight of a pound of lead.
+```
+
 ##### Qwen1.5 72B example with CLI
 
 The below example shows how to specify a path to a GGUF model and how to specify the prompt format for the given model with the `--format` flag.

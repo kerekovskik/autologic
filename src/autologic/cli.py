@@ -13,8 +13,15 @@ def inference_entry(args):
             temp=args.temp,
             model_type=reasoningEngine.ModelType.GEMINI,
         )
+    elif args.command == "openai":
+        llmConfig = reasoningEngine.LLMConfig(
+            context_length=args.context_length,
+            api_key=args.api_key,
+            temp=args.temp,
+            model_type=reasoningEngine.ModelType.OPENAI,
+            model_name=args.model_name
+        )
     else: 
-        
         chat_template = None
         if args.format == 'mixtral_instruct':
             chat_template = reasoningEngine.ChatTemplate.MIXTRAL_INSTRUCT
@@ -82,6 +89,17 @@ def build_args():
     gemini_parser.add_argument('-a','--api_key',type=str, default=None, help='Gemini Pro API Key. If not specified, it will be read from the GEMINI_PRO_API_KEY environment variable.')
     gemini_parser.add_argument('-r','--retries',type=int, default=5, help='How many times to retry inference on each phase of the self-discover process. Default is 5.')
     gemini_parser.set_defaults(func=inference_entry)
+
+    # Parser for the "openai" subcommand
+    openai_parser = subparsers.add_parser('openai', help='Use OpenAI Models.')
+    openai_parser.add_argument('-c','--context_length',type=int, default=2000, help='Maximum tokens per message.') #
+    openai_parser.add_argument('-v','--verbose',action='store_true', help='Enable verbose output') #
+    openai_parser.add_argument('-p','--prompt',type=str, default=None, help="Prompt for the LLM. If not specified, the program will enter multiline interactive mode.") #
+    openai_parser.add_argument('--temp',type=float, default=0.8, help="Temperature setting for LLM inference.") #
+    openai_parser.add_argument('-a','--api_key',type=str, default=None, help='OpenAI API Key. If not specified, it will be read from the AUTOLOGIC_OPENAI_API_KEY environment variable.')
+    openai_parser.add_argument('-r','--retries',type=int, default=5, help='How many times to retry inference on each phase of the self-discover process. Default is 5.')
+    openai_parser.add_argument('-m','--model_name',type=str, default=None, help="OpenAI Model Name.") #
+    openai_parser.set_defaults(func=inference_entry)
 
     # Parser for the "local" subcommand
     local_parser = subparsers.add_parser('local', help='Use a local model with llama-cpp-python.')
