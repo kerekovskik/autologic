@@ -73,7 +73,7 @@ def build_args():
     parser = argparse.ArgumentParser(description='Autologic CLI')
     subparsers = parser.add_subparsers(dest='command', help='Available subcommands')
     
-    # Parser for the "upload" subcommand
+    # Parser for the "gemini" subcommand
     gemini_parser = subparsers.add_parser('gemini', help='Use Gemini Pro Model.')
     gemini_parser.add_argument('-c','--context_length',type=int, default=8000, help='Maximum tokens per message.') #
     gemini_parser.add_argument('-v','--verbose',action='store_true', help='Enable verbose output') #
@@ -83,7 +83,7 @@ def build_args():
     gemini_parser.add_argument('-r','--retries',type=int, default=5, help='How many times to retry inference on each phase of the self-discover process. Default is 5.')
     gemini_parser.set_defaults(func=inference_entry)
 
-    # Parser for the "download" subcommand
+    # Parser for the "local" subcommand
     local_parser = subparsers.add_parser('local', help='Use a local model with llama-cpp-python.')
     local_parser.add_argument('-c','--context_length',type=int, default=8000, help='Maximum tokens per message.') #
     local_parser.add_argument('-v','--verbose',action='store_true', help='Enable verbose output') #
