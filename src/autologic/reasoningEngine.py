@@ -8,6 +8,7 @@ import os
 from . import localLLM
 from .utils import log_print
 import json
+from . import openai
 
 __all__ = ['ModelType','LLMConfig','select','adapt','implement','solve','self_discover','ChatTemplate']
 
@@ -15,7 +16,7 @@ __all__ = ['ModelType','LLMConfig','select','adapt','implement','solve','self_di
 class ModelType(Enum):
     GEMINI = "gemini"
     LOCAL = "local"
-    #GPT = "gpt" #TODO Add support for openai gpt4 and gpt3.5
+    OPENAI = "openai"
 
 class ChatTemplate(Enum):
     MIXTRAL_INSTRUCT = "mixtral_instruct"
@@ -29,10 +30,11 @@ class LLMConfig:
     gguf_path: str = field(default=None,metadata={"description": "Only for local ModelType. Path to GGUF file."})
     context_length: int = field(default=2000,metadata={"description": "Context Limit in terms of Tokens."})
     threads: int = field(default=12,metadata={"description": "Only for local ModelType. Number of threads to use."})
-    api_key: str = field(default=None,metadata={"description": "Not used by GPT/Gemini ModelTypes. API key used for model."})
+    api_key: str = field(default=None,metadata={"description": "Not used by LOCAL ModelTypes. API key used for model."})
     temp: float = field(default=0.8,metadata={"description": "LLM Temperature setting."})
     chat_template: ChatTemplate = field(default=ChatTemplate.MIXTRAL_INSTRUCT,metadata={"description": "Only for local ModelType. Chat Template Type"})
     model_type: ModelType = field(default=ModelType.GEMINI,metadata={"description": "Model Type."})
+    model_name: str = field(default=None,metadata={"description": "Model name. Only used by Gemini or OPENAI models. Use this to set the model to call, for example 'gpt-3.5-turbo-0125' if using openai models. "})
     
     
 def formatPrompt(prompt: str,llmConfig: LLMConfig) ->tuple:
@@ -44,7 +46,7 @@ def formatPrompt(prompt: str,llmConfig: LLMConfig) ->tuple:
         prompt = f"<|system|>\nYou are a friendly AI assistant who follows directions.</s>\n<|user|>\n{prompt}</s>\n<|assistant|>\n"
         stop = ["</s>"]
     elif llmConfig.chat_template == ChatTemplate.CHATML:
-        prompt = f"<|im_start|>system \nYou are a friendly AI assistant who follows directions.<|im_end|><|im_start|>user\n {prompt}<|im_end|>\n<|im_start|>assistant \n"
+        prompt = f"<|im_start|>system \nYou are a helpful AI chatbot who pays very close attention to instructions from the user - especially any instructions on how to format your response.<|im_end|><|im_start|>user\n {prompt}<|im_end|>\n<|im_start|>assistant\n"
         stop = ['<|im_end|>']
         
     else:
@@ -60,6 +62,8 @@ def select(task: str, llmConfig: LLMConfig = LLMConfig()) -> dict:
         selection = __select_gemini(llmConfig=llmConfig,task=task)
     elif llmConfig.model_type == ModelType.LOCAL:
         selection = __select_local(llmConfig=llmConfig,task=task)
+    elif llmConfig.model_type == ModelType.OPENAI:
+        selection = __select_openai(llmConfig=llmConfig,task=task)
     else:
         raise ValueError("Unsupported model Type!")
     
@@ -72,6 +76,8 @@ def adapt(task: str, reasoning_modules: dict, llmConfig: LLMConfig = LLMConfig()
         adapted_modules = __adapt_gemini(llmConfig=llmConfig,task=task,reasoning_modules=reasoning_modules)
     elif llmConfig.model_type == ModelType.LOCAL:
         adapted_modules = __adapt_local(llmConfig=llmConfig,task=task,reasoning_modules=reasoning_modules)
+    elif llmConfig.model_type == ModelType.OPENAI:
+        adapted_modules = __adapt_openai(llmConfig=llmConfig,task=task,reasoning_modules=reasoning_modules)
     else: 
         raise ValueError("Unsupported model Type!")
     
@@ -84,9 +90,17 @@ def implement(task: str, adapted_modules: str, llmConfig: LLMConfig = LLMConfig(
         reasoning_structure = __implement_gemini(llmConfig=llmConfig,task=task,adapted_modules=adapted_modules)
     elif llmConfig.model_type == ModelType.LOCAL:
         reasoning_structure = __implement_local(llmConfig=llmConfig,task=task,adapted_modules=adapted_modules)
+    elif llmConfig.model_type == ModelType.OPENAI:
+        reasoning_structure = __implement_openai(llmConfig=llmConfig,task=task,adapted_modules=adapted_modules)
     else: 
         raise ValueError("Unsupported model Type!")
     
+    return reasoning_structure
+
+def __implement_openai(llmConfig: LLMConfig, task: str, adapted_modules: str):
+    prompt = config.IMPLEMENT_PHASE_PROMPT_TEMPLATE.format(task=task,modules=adapted_modules)
+    response = openai.invoke(prompt,api_key=llmConfig.api_key,temp=llmConfig.temp,max_context=llmConfig.context_length,model_name=llmConfig.model_name)
+    reasoning_structure = utils.extractJSONToDict(response=response)
     return reasoning_structure
     
 def __implement_gemini(llmConfig: LLMConfig, task: str, adapted_modules: str):
@@ -170,11 +184,15 @@ def self_discover(task: str, llmConfig: LLMConfig = LLMConfig(),verbose=False,re
 def solve(task: str, llmConfig: LLMConfig = LLMConfig(),verbose=False,retries=3) -> str:
     
     reasoning_structure = self_discover(task=task,llmConfig=llmConfig,verbose=verbose,retries=retries)
-    log_print
+    
     if llmConfig.model_type == ModelType.GEMINI:
         answer = __solve_gemini(task=task,llmConfig=llmConfig,reasoning_structure=reasoning_structure,verbose=verbose,retries=retries)
     elif llmConfig.model_type == ModelType.LOCAL:
         answer = __solve_local(task=task,llmConfig=llmConfig,reasoning_structure=reasoning_structure,verbose=verbose,retries=retries)
+    elif llmConfig.model_type == ModelType.OPENAI:
+        answer = __solve_openai(task=task,llmConfig=llmConfig,reasoning_structure=reasoning_structure,verbose=verbose,retries=retries)
+    else: 
+        raise ValueError("Unsupported model Type!")
     log_print("Solution has been found.")
     return answer
     
@@ -188,6 +206,24 @@ def __solve_gemini(task: str, llmConfig: LLMConfig,reasoning_structure: dict,ver
     while answer is None and numAttempts < retries:
         try:
             response = gemini.invoke(prompt,api_key=llmConfig.api_key,temp=llmConfig.temp,max_context=llmConfig.context_length)
+            reasoning = utils.extractJSONToDict(response)
+            answer = reasoning["Reasoning Structure"]["FINAL_ANSWER"]
+        except Exception as e:
+            numAttempts += 1
+            if verbose: log_print(f"Failed to Extract answer. Exception: {e} . Starting attempt {numAttempts+1}/{retries} ...")
+    if verbose: log_print(f"Problem Solved\nCompleted Reasoning Structure:\n{json.dumps(reasoning,indent=2)}")
+    return answer
+
+def __solve_openai(task: str, llmConfig: LLMConfig,reasoning_structure: dict,verbose=False,retries=3) -> str:
+    
+    reasoning_structure_str = json.dumps(reasoning_structure,indent=2)
+    prompt = config.SOLVE_PROMPT_TEMPLATE.format(task=task,reasoning_structure=reasoning_structure_str)
+    numAttempts = 0
+    answer = None
+    log_print("Starting to Solve Problem using Reasoning Structure")
+    while answer is None and numAttempts < retries:
+        try:
+            response = openai.invoke(prompt,api_key=llmConfig.api_key,temp=llmConfig.temp,max_context=llmConfig.context_length,model_name=llmConfig.model_name)
             reasoning = utils.extractJSONToDict(response)
             answer = reasoning["Reasoning Structure"]["FINAL_ANSWER"]
         except Exception as e:
@@ -234,6 +270,13 @@ def __select_gemini(llmConfig: LLMConfig, task: str) -> dict:
     selection = utils.extractJSONToDict(response=response)
     return selection
     
+def __select_openai(llmConfig: LLMConfig, task: str) -> dict:
+    
+    prompt = config.SELECT_PHASE_PROMPT_TEMPLATE.format(task=task,modules=utils.rm_list())
+    response = openai.invoke(prompt,api_key=llmConfig.api_key,temp=llmConfig.temp,max_context=llmConfig.context_length,model_name = llmConfig.model_name)
+    selection = utils.extractJSONToDict(response=response)
+    return selection
+
 def __adapt_gemini(llmConfig: LLMConfig, task: str, reasoning_modules: dict) -> str:
     
     module_list = ""
@@ -242,6 +285,17 @@ def __adapt_gemini(llmConfig: LLMConfig, task: str, reasoning_modules: dict) -> 
         
     prompt = config.ADAPT_PHASE_PROMPT_TEMPLATE.format(task=task,modules=module_list)
     response = gemini.invoke(prompt,api_key=llmConfig.api_key,temp=llmConfig.temp,max_context=llmConfig.context_length)
+    adapted_modules = utils.extractMDBlock(response=response)
+    return adapted_modules
+
+def __adapt_openai(llmConfig: LLMConfig, task: str, reasoning_modules: dict) -> str:
+    
+    module_list = ""
+    for module in reasoning_modules["reasoning_modules"]:
+        module_list += f"- {module}\n"
+        
+    prompt = config.ADAPT_PHASE_PROMPT_TEMPLATE.format(task=task,modules=module_list)
+    response = openai.invoke(prompt,api_key=llmConfig.api_key,temp=llmConfig.temp,max_context=llmConfig.context_length,model_name=llmConfig.model_name)
     adapted_modules = utils.extractMDBlock(response=response)
     return adapted_modules
 
