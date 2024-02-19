@@ -109,11 +109,21 @@ GEMINI_PRO_API_KEY="sk-..."
 
 If this is not set, `solve()` will automatically read it from the `.env` file in the working directory or general environment.
 
+### OpenAI API Key
+
+To use the OpenAI models, set the `AUTOLOGIC_OPENAI_API_KEY` variable:
+
+```
+AUTOLOGIC_OPENAI_API_KEY="sk-..."
+```
+
+If this is not set, `solve()` will automatically read it from the `.env` file in the working directory or general environment.
+
 ### Environment Variables 
 
 It is recommended to set sensitive values like API keys in a `.env` file.
 
-This will be automatically loaded from the current working directory if present, and used to populate any unset configuration values that have matching environment variable names (i.e. `GEMINI_PRO_API_KEY`).
+This will be automatically loaded from the current working directory if present, and used to populate any unset configuration values that have matching environment variable names (i.e. `GEMINI_PRO_API_KEY`, `AUTOLOGIC_OPENAI_API_KEY`).
 
 See the "Configuration" section of the documentation for the full set of options. Using `.env` and environment variables allows keeping credentials secure.
 
@@ -143,7 +153,7 @@ print(result)
 ```
 #### Gemini Pro Example with the Python API
 
-The API Key for Gemini Pro is read from the `GEMINI_PRO_API_KEY` environment variable or .env file. It can optionally be passed in to through the `autologic.reasoningEngine.LLMConfig.api_key` field.
+The API Key for Gemini Pro is read from the `GEMINI_PRO_API_KEY` environment variable or .env file. It can optionally be passed in through the `autologic.reasoningEngine.LLMConfig.api_key` field.
 
 ```python
 from autologic import reasoningEngine
@@ -155,6 +165,25 @@ my_config = reasoningEngine.LLMConfig(
     )
 result = reasoningEngine.solve(task = "What is 2 + 2?", llmConfig=my_config)
 print(result)
+```
+
+#### OpenAI Example with the Python API
+
+The API Key for OpenAI is read from the `AUTOLOGIC_OPENAI_API_KEY` environment variable or .env file. It can optionally be passed in through the `autologic.reasoningEngine.LLMConfig.api_key` field.
+
+```python
+from autologic import reasoningEngine
+from autologic import utils
+
+llmConfig = reasoningEngine.LLMConfig(
+    model_type = reasoningEngine.ModelType.OPENAI,
+    model_name = "gpt-3.5-turbo-0125", # You can use any model name available to you through openai - omitting the model_name will default to gpt-3.5-turbo-0125
+    temp = 0.2,
+    context_length = 8000
+)
+
+problem_task = "Beth and Sam are 500 miles apart. If Beth travels at 60mph and leaves her house at 1pm, what time will she arrive at Sam's house?" # 9:20PM
+answer = reasoningEngine.solve(task = problem_task,verbose=True,llmConfig=llmConfig)
 ```
 
 ### Or use the CLI:
@@ -354,6 +383,5 @@ This interactive workflow allows you to conveniently test long, complex reasonin
 ## TODO
 - Expose information on Reasoning Structure and Reasoning Module selection via Python API. Currently, it is only visible when using verbose=True in CLI and API. 
 - Add Mixed mode where discovery of Reasoning Structure and usage of Reasoning Structure can be done by different LLMs.
-- Add support for openai models
 - Add support for other prompt formats (Llama2, airoboros, etc.)
 - Add REST support via Flask
