@@ -181,16 +181,20 @@ def self_discover(task: str, llmConfig: LLMConfig = LLMConfig(),verbose=False,re
         
     return reasoning_structure
     
-def solve(task: str, llmConfig: LLMConfig = LLMConfig(),verbose=False,retries=3) -> str:
+def solve(task: str, discover_config: LLMConfig = LLMConfig(), solve_config: LLMConfig = None,verbose=False,retries=3) -> str:
     
-    reasoning_structure = self_discover(task=task,llmConfig=llmConfig,verbose=verbose,retries=retries)
+    if verbose: log_print(f"discover_config: {discover_config}\nsolve_config: {solve_config}")
+    reasoning_structure = self_discover(task=task,llmConfig=discover_config,verbose=verbose,retries=retries)
     
-    if llmConfig.model_type == ModelType.GEMINI:
-        answer = __solve_gemini(task=task,llmConfig=llmConfig,reasoning_structure=reasoning_structure,verbose=verbose,retries=retries)
-    elif llmConfig.model_type == ModelType.LOCAL:
-        answer = __solve_local(task=task,llmConfig=llmConfig,reasoning_structure=reasoning_structure,verbose=verbose,retries=retries)
-    elif llmConfig.model_type == ModelType.OPENAI:
-        answer = __solve_openai(task=task,llmConfig=llmConfig,reasoning_structure=reasoning_structure,verbose=verbose,retries=retries)
+    if not solve_config:
+        solve_config = discover_config
+        
+    if solve_config.model_type == ModelType.GEMINI:
+        answer = __solve_gemini(task=task,llmConfig=solve_config,reasoning_structure=reasoning_structure,verbose=verbose,retries=retries)
+    elif solve_config.model_type == ModelType.LOCAL:
+        answer = __solve_local(task=task,llmConfig=solve_config,reasoning_structure=reasoning_structure,verbose=verbose,retries=retries)
+    elif solve_config.model_type == ModelType.OPENAI:
+        answer = __solve_openai(task=task,llmConfig=solve_config,reasoning_structure=reasoning_structure,verbose=verbose,retries=retries)
     else: 
         raise ValueError("Unsupported model Type!")
     log_print("Solution has been found.")
@@ -207,7 +211,19 @@ def __solve_gemini(task: str, llmConfig: LLMConfig,reasoning_structure: dict,ver
         try:
             response = gemini.invoke(prompt,api_key=llmConfig.api_key,temp=llmConfig.temp,max_context=llmConfig.context_length)
             reasoning = utils.extractJSONToDict(response)
-            answer = reasoning["Reasoning Structure"]["FINAL_ANSWER"]
+            answer = None
+            try:
+                answer = reasoning["Reasoning Structure"]["FINAL_ANSWER"]
+            except:
+                pass
+            try:
+                answer = reasoning["FINAL_ANSWER"]
+            except:
+                pass
+            
+            if not answer:
+                raise ValueError("Unable to exxtract FINAL_ANSWER from completed reasoning structure")
+            
         except Exception as e:
             numAttempts += 1
             if verbose: log_print(f"Failed to Extract answer. Exception: {e} . Starting attempt {numAttempts+1}/{retries} ...")
@@ -225,7 +241,18 @@ def __solve_openai(task: str, llmConfig: LLMConfig,reasoning_structure: dict,ver
         try:
             response = openai.invoke(prompt,api_key=llmConfig.api_key,temp=llmConfig.temp,max_context=llmConfig.context_length,model_name=llmConfig.model_name)
             reasoning = utils.extractJSONToDict(response)
-            answer = reasoning["Reasoning Structure"]["FINAL_ANSWER"]
+            answer = None
+            try:
+                answer = reasoning["Reasoning Structure"]["FINAL_ANSWER"]
+            except:
+                pass
+            try:
+                answer = reasoning["FINAL_ANSWER"]
+            except:
+                pass
+            
+            if not answer:
+                raise ValueError("Unable to exxtract FINAL_ANSWER from completed reasoning structure")
         except Exception as e:
             numAttempts += 1
             if verbose: log_print(f"Failed to Extract answer. Exception: {e} . Starting attempt {numAttempts+1}/{retries} ...")
@@ -253,7 +280,21 @@ def __solve_local(task: str, llmConfig: LLMConfig,reasoning_structure: dict,verb
             )
             
             reasoning = utils.extractJSONToDict(response)
-            answer = reasoning["Reasoning Structure"]["FINAL_ANSWER"]
+            
+            answer = None
+            try:
+                answer = reasoning["Reasoning Structure"]["FINAL_ANSWER"]
+            except:
+                pass
+            try:
+                answer = reasoning["FINAL_ANSWER"]
+            except:
+                pass
+            
+            if not answer:
+                raise ValueError("Unable to exxtract FINAL_ANSWER from completed reasoning structure")
+            
+                
         except Exception as e:
             numAttempts += 1
             
